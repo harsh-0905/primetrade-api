@@ -64,7 +64,7 @@ primetrade-api/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/primetrade-api.git
+git clone https://github.com/harsh-0905/primetrade-api
 cd primetrade-api
 ```
 
