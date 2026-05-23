@@ -9,63 +9,61 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
 const logger = require("./utils/logger");
 
-// Route imports
 const authRoutes = require("./routes/auth.routes");
 const taskRoutes = require("./routes/task.routes");
 const adminRoutes = require("./routes/admin.routes");
+const aiRoutes = require("./routes/ai.routes");
 
 const app = express();
 
-// ─── Security Middleware ──────────────────────────────────────────
-// Sets secure HTTP headers
+// Security
 app.use(helmet());
+app.use(cors({
+  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  credentials: true,
+}));
 
-// CORS: only allow requests from our frontend
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
-
-// Rate limiter: max 100 requests per 15 minutes per IP
+// Rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
   max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
   message: { success: false, message: "Too many requests, try again later." },
 });
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 20,
+  message: { success: false, message: "AI rate limit exceeded. Wait a minute." },
+});
 app.use("/api", limiter);
 
-// ─── Body Parsing & Sanitization ─────────────────────────────────
-app.use(express.json());
+// Body parsing & sanitization
+app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: false }));
-
-// Strips $ and . from input to prevent NoSQL injection
 app.use(mongoSanitize());
 
-// ─── Logging ─────────────────────────────────────────────────────
-// Log HTTP requests using morgan, pipe to winston
-app.use(
-  morgan("combined", {
-    stream: { write: (msg) => logger.http(msg.trim()) },
-  })
-);
+// Logging
+app.use(morgan("combined", { stream: { write: (msg) => logger.http(msg.trim()) } }));
 
-// ─── API Routes ───────────────────────────────────────────────────
+// Routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/ai", aiLimiter, aiRoutes);
 
-// ─── Swagger Docs ────────────────────────────────────────────────
+// Swagger
 app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// ─── Health Check ────────────────────────────────────────────────
+// Health
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+  res.json({ status: "ok", timestamp: new Date().toISOString(), version: "2.0.0" });
 });
 
-// ─── 404 Handler ─────────────────────────────────────────────────
+// 404
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
-// ─── Global Error Handler ────────────────────────────────────────
-// Catches all errors thrown with next(err)
+// Global error handler
 app.use((err, req, res, next) => {
   logger.error(err.stack);
   const status = err.statusCode || 500;

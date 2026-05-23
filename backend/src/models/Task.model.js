@@ -11,7 +11,7 @@ const taskSchema = new mongoose.Schema(
     description: {
       type: String,
       trim: true,
-      maxlength: [500, "Description cannot exceed 500 characters"],
+      maxlength: [1000, "Description cannot exceed 1000 characters"],
     },
     status: {
       type: String,
@@ -23,7 +23,14 @@ const taskSchema = new mongoose.Schema(
       enum: ["low", "medium", "high"],
       default: "medium",
     },
-    // Each task belongs to the user who created it
+    dueDate: {
+      type: Date,
+      default: null,
+    },
+    tags: {
+      type: [String],
+      default: [],
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -33,7 +40,8 @@ const taskSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Index for fast queries: all tasks by a specific user
 taskSchema.index({ owner: 1, createdAt: -1 });
+taskSchema.index({ owner: 1, status: 1 });
+taskSchema.index({ owner: 1, priority: 1 });
 
 module.exports = mongoose.model("Task", taskSchema);
