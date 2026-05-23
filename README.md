@@ -1,531 +1,155 @@
-# Primetrade Task API
+# Primetrade v2 — AI-Powered Task Manager
 
-A scalable REST API built with **Node.js + Express + MongoDB Atlas**, featuring JWT authentication, role-based access control (user/admin), full task CRUD, and a React frontend — submitted as part of the Backend Developer Intern assignment.
+A full-stack task management app built with React + Node.js, featuring AI assistance, analytics dashboard, kanban view, and a polished dark UI.
 
----
+## Live Demo
+- Frontend: https://primetrade-app.netlify.app/
+- Backend API: https://primetrade-api-sntq.onrender.com/health
+- API Docs: https://primetrade-api-sntq.onrender.com/api/v1/docs
 
-## Assignment Checklist
+## Features
 
-| Requirement | Status |
-|---|---|
-| User Registration & Login with bcrypt + JWT | ✅ |
-| Role-Based Access (user vs admin) | ✅ |
-| CRUD APIs for Tasks | ✅ |
-| API Versioning (`/api/v1/`) | ✅ |
-| Input Validation (Joi) | ✅ |
-| Centralized Error Handling | ✅ |
-| Swagger API Documentation | ✅ |
-| MongoDB Schema Design | ✅ |
-| React Frontend (Register/Login/Dashboard/CRUD) | ✅ |
-| JWT Secure Handling | ✅ |
-| Input Sanitization (NoSQL injection prevention) | ✅ |
-| Scalable Folder Structure | ✅ |
-| Rate Limiting | ✅ |
-| Logging (Winston) | ✅ |
-| Docker Deployment | ✅ |
+### Core
+- JWT authentication with protected routes and RBAC
+- Full task CRUD — create, read, update, delete
+- Task fields: title, description, status, priority, due date, tags
+- One-click task completion via checkbox
+- Search tasks by title or description
+- Filter by status and priority
+- Pagination
 
----
+### AI (Groq + Llama 3.3 70B)
+- Floating AI Assistant chat panel — ask anything about productivity and task planning
+- AI Task Suggestions — type a title, click AI button to auto-fill description and suggest priority
+- Quick prompt chips for common queries
+
+### Dashboard
+- Summary stat cards — total, completed, high priority, overdue
+- List view and Kanban board view toggle
+- Animated task cards with priority color bars and due date indicators
+- Skeleton loaders
+
+### Analytics Page
+- Tasks by status — donut pie chart
+- Tasks by priority — bar chart
+- 7-day activity — line chart (created vs completed)
+- KPI cards — completion rate, overdue count
+
+### Admin Panel
+- Platform-wide stats
+- All users table with avatar initials, role badges, join date
 
 ## Tech Stack
 
-| Layer | Technology |
+| Layer | Tech |
 |---|---|
-| Backend | Node.js, Express.js |
-| Database | MongoDB Atlas (Mongoose ODM) |
-| Auth | JWT + bcryptjs |
+| Frontend | React 18, Vite, React Router v6, Recharts, date-fns |
+| Backend | Node.js, Express 4, MongoDB, Mongoose |
+| Auth | JWT, bcryptjs |
 | Validation | Joi |
-| API Docs | Swagger (swagger-jsdoc + swagger-ui-express) |
-| Logging | Winston + Morgan |
+| AI | Groq SDK, Llama 3.3 70B |
 | Security | Helmet, express-rate-limit, express-mongo-sanitize |
-| Frontend | React 18 + Vite + React Router v6 |
-| Deployment | Docker + Docker Compose |
-
----
+| Logging | Winston, Morgan |
+| Docs | Swagger UI |
+| Deploy | Render (backend), Netlify (frontend) |
 
 ## Project Structure
-
-```
-primetrade-api/
+primetrade/
 ├── backend/
-│   ├── src/
-│   │   ├── config/
-│   │   │   ├── db.js                 # MongoDB Atlas connection
-│   │   │   └── swagger.js            # Swagger config
-│   │   ├── controllers/
-│   │   │   ├── auth.controller.js    # register, login, getMe
-│   │   │   ├── task.controller.js    # CRUD + filter + pagination
-│   │   │   └── admin.controller.js   # stats, users, delete user
-│   │   ├── middleware/
-│   │   │   └── auth.middleware.js    # protect (JWT) + restrictTo (RBAC)
-│   │   ├── models/
-│   │   │   ├── User.model.js         # User schema with bcrypt hook
-│   │   │   └── Task.model.js         # Task schema with owner ref
-│   │   ├── routes/
-│   │   │   ├── auth.routes.js
-│   │   │   ├── task.routes.js
-│   │   │   └── admin.routes.js
-│   │   ├── utils/
-│   │   │   ├── logger.js             # Winston logger
-│   │   │   └── AppError.js           # Custom error class
-│   │   ├── validators/
-│   │   │   └── schemas.js            # Joi schemas + validate middleware
-│   │   ├── app.js                    # Express app + all middleware
-│   │   └── server.js                 # Entry point
-│   ├── logs/                         # Auto-created by Winston
-│   ├── .env.example                  # Copy this to .env
-│   ├── .dockerignore
-│   ├── Dockerfile
-│   └── package.json
-│
-├── frontend/
-│   ├── src/
-│   │   ├── api/
-│   │   │   ├── client.js             # Axios instance + interceptors
-│   │   │   └── endpoints.js          # All API call functions
-│   │   ├── components/
-│   │   │   ├── Navbar.jsx
-│   │   │   ├── ProtectedRoute.jsx    # Redirects if not logged in
-│   │   │   ├── TaskModal.jsx         # Create / Edit task modal
-│   │   │   └── Toast.jsx             # Success / error notifications
-│   │   ├── context/
-│   │   │   └── AuthContext.jsx       # Global user state + token
-│   │   ├── hooks/
-│   │   │   └── useToast.js
-│   │   ├── pages/
-│   │   │   ├── Login.jsx
-│   │   │   ├── Register.jsx
-│   │   │   ├── Dashboard.jsx         # Task list + CRUD UI
-│   │   │   └── Admin.jsx             # Admin panel (stats + users)
-│   │   ├── App.jsx                   # Router setup
-│   │   ├── main.jsx
-│   │   └── index.css                 # Global design system
-│   ├── .dockerignore
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   ├── vite.config.js
-│   └── package.json
-│
-├── docker-compose.yml
-├── .gitignore
-├── SCALABILITY.md
-└── README.md
-```
+│   └── src/
+│       ├── controllers/     # auth, task, admin
+│       ├── models/          # User, Task (with dueDate, tags)
+│       ├── routes/          # auth, task, admin, ai
+│       ├── middleware/       # JWT protect, error handler
+│       ├── validators/      # Joi schemas
+│       ├── utils/           # AppError, Winston logger
+│       └── config/          # DB, Swagger
+└── frontend/
+└── src/
+├── pages/           # Login, Register, Dashboard, Analytics, Admin
+├── components/      # Navbar, TaskModal, AIAssistant, Toast
+├── context/         # AuthContext
+├── api/             # axios client, endpoints
+└── hooks/           # useToast
 
----
+## Setup — Local
 
-## Prerequisites
-
-Make sure these are installed before running anything:
-
-- [Node.js v18+](https://nodejs.org/) — check with `node -v`
-- [npm v9+](https://www.npmjs.com/) — check with `npm -v`
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) — only needed for Docker method
-- A [MongoDB Atlas](https://cloud.mongodb.com) account with a cluster created
-
----
-
-## Environment Setup (Do This First)
-
-```bash
-# 1. Clone the repo
-git clone https://github.com/harsh-0905/primetrade-api
-cd primetrade-api
-
-# 2. Create your .env file from the template
-cp backend/.env.example backend/.env
-```
-
-Now open `backend/.env` and fill in your values:
-
-```env
-PORT=5000
-NODE_ENV=development
-
-# Your MongoDB Atlas connection string
-MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/primetrade_db
-
-# Any long random string — keep this secret, never share it
-JWT_SECRET=your_long_random_secret_here
-JWT_EXPIRES_IN=7d
-
-CLIENT_URL=http://localhost:3000
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX=100
-```
-
-> ⚠️ **Never commit `.env` to GitHub.** It is already in `.gitignore`.
-
-**MongoDB Atlas — Allow Network Access:**
-Atlas dashboard → Network Access → Add IP Address → add `0.0.0.0/0`
-This is required for Docker and cloud deployment to connect to Atlas.
-
----
-
-## Option 1: Run Locally (Without Docker)
+### Prerequisites
+- Node.js 18+
+- MongoDB (local or Atlas)
+- Groq API key (free at console.groq.com)
 
 ### Backend
-
 ```bash
 cd backend
 npm install
+cp .env.example .env
+# Fill in .env values
 npm run dev
 ```
 
-Expected terminal output:
-```
-[2024-01-15 10:30:00] info: MongoDB connected: cluster0.xxxxx.mongodb.net
-[2024-01-15 10:30:00] info: Server running on port 5000 [development]
-[2024-01-15 10:30:00] info: Swagger docs: http://localhost:5000/api/v1/docs
-```
-
-### Frontend (open a new terminal)
-
+### Frontend
 ```bash
 cd frontend
 npm install
+# Create .env with VITE_API_URL=http://localhost:5000/api/v1
 npm run dev
 ```
 
-Expected terminal output:
-```
-  VITE v5.x ready in 300ms
-  ➜  Local:   http://localhost:3000/
-```
+Open http://localhost:5173
 
-**URLs:**
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:5000/api/v1 |
-| Swagger Docs | http://localhost:5000/api/v1/docs |
-| Health Check | http://localhost:5000/health |
+## Environment Variables
 
----
+### Backend `.env`
+NODE_ENV=development
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/primetrade
+JWT_SECRET=your_long_random_secret
+JWT_EXPIRES_IN=7d
+CLIENT_URL=http://localhost:5173
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=100
+GROQ_API_KEY=gsk_your_key_here
 
-## Option 2: Run with Docker
+### Frontend `.env`
+VITE_API_URL=http://localhost:5000/api/v1
 
-```bash
-# From the project root (where docker-compose.yml lives)
-docker-compose up --build
-```
+## Deployment
 
-Run in background:
-```bash
-docker-compose up --build -d
-```
+### Backend → Render
+1. Connect GitHub repo
+2. Build command: `npm install`
+3. Start command: `npm start`
+4. Add all env vars from above (use Atlas URI for MONGO_URI)
 
-View logs:
-```bash
-docker-compose logs -f backend
-docker-compose logs -f frontend
-```
+### Frontend → Netlify
+1. Connect GitHub repo
+2. Build command: `npm run build`
+3. Publish directory: `dist`
+4. Add env var: `VITE_API_URL=https://your-backend.onrender.com/api/v1`
 
-Stop everything:
-```bash
-docker-compose down
-```
+## API Endpoints
 
-Same URLs as local apply.
-
----
-
-## Testing the Application (Step by Step)
-
-### Step 1 — Health Check (confirms server is running)
-
-```bash
-curl http://localhost:5000/health
-```
-
-Expected:
-```json
-{ "status": "ok", "timestamp": "2024-01-15T10:30:00.000Z" }
-```
-
----
-
-### Step 2 — Register a User
-
-```bash
-curl -X POST http://localhost:5000/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Harsh","email":"harsh@example.com","password":"secret123"}'
-```
-
-Expected:
-```json
-{
-  "success": true,
-  "message": "Registration successful",
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIs...",
-    "user": {
-      "id": "64f1a...",
-      "name": "Harsh",
-      "email": "harsh@example.com",
-      "role": "user"
-    }
-  }
-}
-```
-
----
-
-### Step 3 — Login
-
-```bash
-curl -X POST http://localhost:5000/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"harsh@example.com","password":"secret123"}'
-```
-
-Copy the `token` value from the response — you need it for all protected routes below.
-
----
-
-### Step 4 — Create a Task
-
-Replace `YOUR_TOKEN` with the token from Step 3:
-
-```bash
-curl -X POST http://localhost:5000/api/v1/tasks \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"title":"Build the API","description":"Complete intern assignment","priority":"high"}'
-```
-
-Expected:
-```json
-{
-  "success": true,
-  "message": "Task created",
-  "data": {
-    "task": {
-      "_id": "65a2b...",
-      "title": "Build the API",
-      "status": "todo",
-      "priority": "high"
-    }
-  }
-}
-```
-
----
-
-### Step 5 — Get All Tasks (with filters)
-
-```bash
-# All tasks
-curl http://localhost:5000/api/v1/tasks \
-  -H "Authorization: Bearer YOUR_TOKEN"
-
-# Filter by status
-curl "http://localhost:5000/api/v1/tasks?status=todo&priority=high" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
----
-
-### Step 6 — Update a Task
-
-Replace `TASK_ID` with the `_id` from Step 4:
-
-```bash
-curl -X PATCH http://localhost:5000/api/v1/tasks/TASK_ID \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"status":"in-progress"}'
-```
-
----
-
-### Step 7 — Delete a Task
-
-```bash
-curl -X DELETE http://localhost:5000/api/v1/tasks/TASK_ID \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
----
-
-### Step 8 — Test RBAC (should return 403 for normal users)
-
-```bash
-curl http://localhost:5000/api/v1/admin/stats \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-Expected:
-```json
-{ "success": false, "message": "You do not have permission for this action." }
-```
-
----
-
-### Step 9 — Test via Swagger UI (easiest method)
-
-1. Open http://localhost:5000/api/v1/docs
-2. Run `POST /auth/register` to create an account
-3. Copy the token from the response
-4. Click **Authorize** button (top right of Swagger page)
-5. Enter: `Bearer YOUR_TOKEN`
-6. All protected routes are now unlocked — test everything in the browser
-
----
-
-## How to Create an Admin User
-
-Admin registration is intentionally not exposed via API (security best practice).
-After a normal user registers, promote them in MongoDB Atlas:
-
-**Atlas UI:** Collections → `primetrade_db` → `users` → find your document → Edit:
-```json
-{ "$set": { "role": "admin" } }
-```
-
-**Or via MongoDB Compass / Shell:**
-```js
-db.users.updateOne(
-  { email: "harsh@example.com" },
-  { $set: { role: "admin" } }
-)
-```
-
-Log in again to get a fresh token. The Admin panel will now appear in the frontend navbar.
-
----
-
-## API Endpoints Reference
-
-### Auth — `/api/v1/auth`
-
-| Method | Endpoint | Auth Required | Description |
+| Method | Route | Auth | Description |
 |---|---|---|---|
-| POST | `/register` | No | Register new user |
-| POST | `/login` | No | Login, returns JWT |
-| GET | `/me` | Yes | Get current user profile |
+| POST | /auth/register | Public | Register new user |
+| POST | /auth/login | Public | Login, returns JWT |
+| GET | /auth/me | JWT | Get current user |
+| GET | /tasks | JWT | List tasks (filter, search, paginate) |
+| POST | /tasks | JWT | Create task |
+| PATCH | /tasks/:id | JWT | Update task |
+| DELETE | /tasks/:id | JWT | Delete task |
+| GET | /tasks/stats | JWT | Aggregated user stats |
+| POST | /ai/chat | JWT | AI assistant (multi-turn) |
+| POST | /ai/suggest | JWT | AI task description + priority |
+| POST | /ai/prioritize | JWT | AI prioritization advice |
+| GET | /admin/stats | Admin | Platform stats |
+| GET | /admin/users | Admin | All users list |
 
-### Tasks — `/api/v1/tasks`
-
-| Method | Endpoint | Auth Required | Description |
-|---|---|---|---|
-| GET | `/` | Yes | Get all tasks (supports filters + pagination) |
-| POST | `/` | Yes | Create a task |
-| GET | `/:id` | Yes | Get a single task by ID |
-| PATCH | `/:id` | Yes | Update a task |
-| DELETE | `/:id` | Yes | Delete a task |
-
-Query params: `?status=todo&priority=high&page=1&limit=10`
-
-### Admin — `/api/v1/admin` (admin role only)
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/stats` | Total users, tasks, breakdown by status |
-| GET | `/users` | List all registered users |
-| DELETE | `/users/:id` | Delete user + all their tasks |
-
----
-
-## Database Schema
-
-### User Collection
-```
-_id          ObjectId    auto-generated
-name         String      required, max 50 chars
-email        String      required, unique, lowercase
-password     String      bcrypt hashed, never returned in queries
-role         String      "user" | "admin"  (default: "user")
-createdAt    Date        auto
-updatedAt    Date        auto
-```
-
-### Task Collection
-```
-_id          ObjectId    auto-generated
-title        String      required, max 100 chars
-description  String      optional, max 500 chars
-status       String      "todo" | "in-progress" | "done"  (default: "todo")
-priority     String      "low" | "medium" | "high"  (default: "medium")
-owner        ObjectId    ref: User._id  (indexed for fast per-user queries)
-createdAt    Date        auto
-updatedAt    Date        auto
-```
-
----
-
-## Do I Need `.dockerignore` Files?
-
-**Yes — and they are already included** (`backend/.dockerignore` and `frontend/.dockerignore`).
-
-Without them:
-- Docker copies `node_modules` (hundreds of MB) into the build context → very slow builds
-- Your `.env` file could accidentally be baked into the Docker image → security risk
-
-The `.dockerignore` files prevent both problems.
-
----
-
-## Deploying to Cloud (Free)
-
-### Backend → Render.com
-
-```
-1. Push this repo to GitHub (confirm .env is NOT in the repo)
-2. render.com → New → Web Service → connect your repo
-3. Settings:
-   Root Directory : backend
-   Build Command  : npm install
-   Start Command  : node src/server.js
-4. Add Environment Variables in Render dashboard (same keys as .env)
-5. Deploy → copy the Render URL (e.g. https://primetrade-api.onrender.com)
-```
-
-### Frontend → Vercel
-
-```
-1. vercel.com → New Project → Import from GitHub
-2. Settings:
-   Root Directory : frontend
-   Framework      : Vite
-3. Deploy → copy the Vercel URL
-4. Go back to Render → update CLIENT_URL env var to your Vercel URL
-5. Redeploy backend
-```
-
-### Database
-
-MongoDB Atlas is already your database — no extra steps needed for deployment.
-
----
-
-## Security Measures
-
-- **bcrypt** (cost factor 12) — passwords hashed, never stored plain text
-- **JWT** — stateless, signed with secret, expires in 7 days
-- **Helmet** — sets 11 secure HTTP response headers
-- **express-mongo-sanitize** — strips `$` and `.` to prevent NoSQL injection
-- **Rate limiting** — 100 requests per 15 min per IP
-- **Generic auth errors** — same message for wrong email or wrong password (prevents user enumeration)
-- **`select: false`** on password field — never returned in any DB query
-- **Non-root user** in Docker container
-
----
-
-## Common Errors & Fixes
-
-| Error | Cause | Fix |
-|---|---|---|
-| `MongooseServerSelectionError` | Atlas IP not whitelisted | Atlas → Network Access → Add `0.0.0.0/0` |
-| `Cannot GET /api/v1/...` | Wrong URL | All routes start with `/api/v1/` |
-| `401 Unauthorized` | Missing or expired token | Login again, use fresh token |
-| `403 Forbidden` | Not admin role | Promote user to admin in Atlas |
-| CORS error in browser | `CLIENT_URL` mismatch | Set `CLIENT_URL=http://localhost:3000` in `.env` |
-| Docker `port already in use` | Port 5000 or 3000 busy | Run `lsof -ti:5000 \| xargs kill` |
-| `JWT malformed` | Token copied incorrectly | Do not include "Bearer" in the token value itself |
-
----
-
-## Scalability Note
-
-See [SCALABILITY.md](./SCALABILITY.md) for full breakdown covering horizontal scaling, Redis caching, microservices split, and cloud deployment architecture.
+## Portfolio Highlights
+- Production-grade REST API with RBAC, rate limiting, input sanitization
+- AI/LLM integration using Groq (free tier, Llama 3.3 70B)
+- Data visualization with Recharts
+- Docker-ready with docker-compose
+- Swagger API documentation at /api/v1/docs
+- Winston structured logging
