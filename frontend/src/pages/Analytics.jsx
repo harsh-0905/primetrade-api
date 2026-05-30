@@ -42,7 +42,8 @@ const Analytics = () => {
     <>
       <Navbar />
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 20px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+        {/* FIX: loading skeleton also uses responsive minmax */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 400px), 1fr))", gap: 16 }}>
           {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 260, borderRadius: "var(--radius-lg)" }} />)}
         </div>
       </div>
@@ -99,21 +100,22 @@ const Analytics = () => {
           ))}
         </div>
 
-        {/* Charts grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: 16 }}>
+        {/* Charts grid — FIX: minmax(min(100%, 400px), 1fr) prevents overflow on mobile */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 400px), 1fr))", gap: 16 }}>
 
           {/* Status breakdown */}
           <div className="card">
             <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 20, color: "var(--text-2)" }}>Tasks by Status</h3>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={byStatus} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => `${name} (${value})`} labelLine={false}>
+                {/* FIX: removed label and labelLine props — they caused text overlap on small/zero slices */}
+                <Pie data={byStatus} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value">
                   {byStatus.map((entry, i) => <Cell key={i} fill={entry.fill} stroke="transparent" />)}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 8 }}>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 8, flexWrap: "wrap" }}>
               {byStatus.map(s => (
                 <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-muted)" }}>
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: s.fill, display: "inline-block" }} />
